@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>スマートドッツ / Smart Dots</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- 縦画面警告 (Orientation Lock) -->
+    <div id="orientation-warning" class="overlay">
+        <p>端末を横向き（ランドスケープ）にしてください<br>Please rotate your device</p>
+    </div>
+
+    <!-- ホーム画面 -->
+    <div id="home-screen" class="screen active">
+        <h1>スマートドッツ / Smart Dots</h1>
+        <button id="btn-start-lesson" class="primary-btn">今日のレッスンをはじめる</button>
+        
+        <div class="settings-panel">
+            <h2>設定 / Settings</h2>
+            <label>言語: 
+                <select id="setting-lang">
+                    <option value="ja">日本語</option>
+                    <option value="en">English</option>
+                    <option value="bilingual">Bilingual (日+英)</option>
+                </select>
+            </label>
+            <label>速度: 
+                <select id="setting-speed">
+                    <option value="500">0.5秒</option>
+                    <option value="600">0.6秒</option>
+                    <option value="800">0.8秒</option>
+                </select>
+            </label>
+            <div class="backup-section">
+                <button id="btn-export">バックアップコード生成</button>
+                <input type="text" id="input-import" placeholder="引き継ぎコードを入力">
+                <button id="btn-import">復元</button>
+            </div>
+        </div>
+        <div id="progress-display">現在の進捗: Day <span id="current-day-text">1</span></div>
+    </div>
+
+    <!-- カウントダウン画面 -->
+    <div id="countdown-screen" class="screen">
+        <div id="countdown-text">3</div>
+    </div>
+
+    <!-- レッスン画面 -->
+    <div id="lesson-screen" class="screen">
+        <button id="btn-pause">✕ 中断 (Hold 2s)</button>
+        <canvas id="main-canvas"></canvas>
+        <div id="lesson-text-overlay"></div>
+    </div>
+
+    <!-- チャイルドロック画面 -->
+    <div id="lock-screen" class="screen">
+        <h2>おうちのひととやってね / For Parents</h2>
+        <p id="lock-quiz-text">3 + 4 = ?</p>
+        <div id="numpad"></div>
+        <button id="btn-lock-cancel">もどる / Cancel</button>
+    </div>
+
+    <!-- 終了画面 -->
+    <div id="result-screen" class="screen">
+        <h2>よくできました！ / Great Job!</h2>
+        <button id="btn-return-home">ホームへ戻る</button>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>\n
