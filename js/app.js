@@ -22,12 +22,24 @@ function showScreen(name) {
     screens[name].classList.add('active');
 }
 
-document.getElementById('current-day-text').innerText = stateMgr.state.progress.current_day;
+// UI Init
+document.getElementById('setting-day').value = stateMgr.state.progress.current_day;
 document.getElementById('setting-lang').value = stateMgr.state.settings.language;
 document.getElementById('setting-speed').value = stateMgr.state.settings.speed;
+document.getElementById('setting-skin').value = stateMgr.state.settings.skin || 'circle';
+document.getElementById('setting-dot-color').value = stateMgr.state.settings.dotColor || '#ff6b6b';
+document.getElementById('setting-bg-color').value = stateMgr.state.settings.bgColor || '#f0f8ff';
 
+// Events
+document.getElementById('setting-day').addEventListener('change', (e) => {
+    stateMgr.state.progress.current_day = parseInt(e.target.value);
+    stateMgr.save();
+});
 document.getElementById('setting-lang').addEventListener('change', (e) => stateMgr.updateSetting('language', e.target.value));
 document.getElementById('setting-speed').addEventListener('change', (e) => stateMgr.updateSetting('speed', parseInt(e.target.value)));
+document.getElementById('setting-skin').addEventListener('change', (e) => stateMgr.updateSetting('skin', e.target.value));
+document.getElementById('setting-dot-color').addEventListener('change', (e) => stateMgr.updateSetting('dotColor', e.target.value));
+document.getElementById('setting-bg-color').addEventListener('change', (e) => stateMgr.updateSetting('bgColor', e.target.value));
 
 document.getElementById('btn-export').addEventListener('click', () => {
     const code = stateMgr.exportBackupCode();
@@ -98,17 +110,14 @@ async function startLesson() {
     
     showScreen('lesson');
     
-    // ★修正: 画面表示直後にCanvasの初期化を確実に実行
-    // setTimeoutでブラウザのレンダリングキューに処理を遅延させ、確実にレイアウトが確定してから初期化
     await new Promise(resolve => setTimeout(() => {
         if (!render) {
             render = new RenderEngine('main-canvas');
-        } else {
-            render.initCanvas();
         }
+        // ★背景色を適用して初期化
+        render.initCanvas(stateMgr.state.settings.bgColor);
         resolve();
     }, 0));
-
 
     runLessonLoop(numbers, day, lang);
 }
@@ -118,11 +127,14 @@ async function runLessonLoop(numbers, day, lang) {
     if (lang === 'bilingual') speed = Math.max(speed, 900);
 
     const textOverlay = document.getElementById('lesson-text-overlay');
+    const skin = stateMgr.state.settings.skin;
+    const dotColor = stateMgr.state.settings.dotColor;
 
     for (const num of numbers) {
         if (!lessonActive) return;
         
-        render.drawDots(num, stateMgr.state.settings.skin);
+        // ★スキンと色を渡して描画
+        render.drawDots(num, skin, dotColor);
         textOverlay.innerText = '';
         
         if (day >= 61) {
@@ -154,12 +166,15 @@ async function runLessonLoop(numbers, day, lang) {
 
 async function runQuizPhase(numbers, day) {
     const textOverlay = document.getElementById('lesson-text-overlay');
+    const skin = stateMgr.state.settings.skin;
+    const dotColor = stateMgr.state.settings.dotColor;
+
     for (let i = 0; i < 3; i++) {
         if (!lessonActive) return;
         const correct = numbers[Math.floor(Math.random() * numbers.length)];
         const quiz = generateQuiz(correct, day);
         
-        render.drawQuizScreen(quiz.left, quiz.right, stateMgr.state.settings.skin);
+        render.drawQuizScreen(quiz.left, quiz.right, skin, dotColor);
         textOverlay.innerText = `どっちが ${correct} かな？`;
         
         await waitForQuizAnswer(quiz.answerSide);
@@ -200,6 +215,9 @@ function waitForQuizAnswer(correctSide) {
 
 async function runFormulaPhase(numbers, lang) {
     const textOverlay = document.getElementById('lesson-text-overlay');
+    const skin = stateMgr.state.settings.skin;
+    const dotColor = stateMgr.state.settings.dotColor;
+
     for (const num of numbers) {
         if (!lessonActive) return;
         const formula = generateFormula(num);
@@ -211,7 +229,7 @@ async function runFormulaPhase(numbers, lang) {
         
         for (let i = 0; i <= 10; i++) {
             if (!lessonActive) return;
-            render.drawFormulaAnimation(posA, posB, stateMgr.state.settings.skin, i / 10);
+            render.drawFormulaAnimation(posA, posB, skin, dotColor, i / 10);
             await sleep(50);
         }
         

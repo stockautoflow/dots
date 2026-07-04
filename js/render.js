@@ -2,23 +2,21 @@ export class RenderEngine {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
-        this.initCanvas();
     }
 
-    initCanvas() {
+    initCanvas(bgColor = '#f0f8ff') {
         const dpr = window.devicePixelRatio || 1;
         
-        // ★修正: CSSに依存せずJSから強制的にスタイルを叩き込む
         this.canvas.style.display = 'block';
         this.canvas.style.width = '800px';
         this.canvas.style.height = '600px';
         this.canvas.style.maxWidth = '95vw';
         this.canvas.style.maxHeight = '75vh';
         this.canvas.style.flexShrink = '0'; 
-        this.canvas.style.margin = 'auto'; // 中央配置
+        this.canvas.style.margin = 'auto'; 
         
-        // ★視認性アップ: 鮮やかなシアンの背景と、太い黒枠をつける
-        this.canvas.style.backgroundColor = '#00FFFF'; // シアン
+        // ★背景色を動的に適用
+        this.canvas.style.backgroundColor = bgColor; 
         this.canvas.style.border = '4px solid #333';
         this.canvas.style.borderRadius = '10px';
         this.canvas.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)';
@@ -44,26 +42,31 @@ export class RenderEngine {
         return 10;
     }
 
-    getColor(skin) {
-        if (skin === 'blue_circle') return '#3182ce';
-        return '#ff6b6b';
+    // ★共通の描画関数（丸 or 絵文字）
+    drawItem(x, y, r, skin, dotColor) {
+        if (skin === 'circle' || skin === 'dynamic') {
+            this.ctx.fillStyle = dotColor;
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, r, 0, Math.PI * 2);
+            this.ctx.fill();
+        } else {
+            // 絵文字を描画
+            this.ctx.font = `${r * 2.5}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(skin, x, y);
+        }
     }
 
-    drawDots(value, skin, customPositions = null) {
-        // フェールセーフ: サイズが未設定なら再初期化
+    drawDots(value, skin, dotColor, customPositions = null) {
         if (!this.logicalWidth) this.initCanvas();
-        
         this.clear();
         const r = this.getDotRadius(value);
-        const color = this.getColor(skin);
         
         let positions = customPositions || this.generatePositions(value, r, this.logicalWidth, this.logicalHeight);
 
-        this.ctx.fillStyle = color;
         for (const pos of positions) {
-            this.ctx.beginPath();
-            this.ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
-            this.ctx.fill();
+            this.drawItem(pos.x, pos.y, r, skin, dotColor);
         }
     }
 
@@ -125,7 +128,7 @@ export class RenderEngine {
         return positions;
     }
 
-    drawQuizScreen(leftNum, rightNum, skin) {
+    drawQuizScreen(leftNum, rightNum, skin, dotColor) {
         this.clear();
         this.ctx.beginPath();
         this.ctx.setLineDash([5, 15]);
@@ -141,36 +144,24 @@ export class RenderEngine {
         const rRight = this.getDotRadius(rightNum);
         const posRight = this.generatePositions(rightNum, rRight, this.logicalWidth / 2, this.logicalHeight);
         
-        this.ctx.fillStyle = this.getColor(skin);
-        
         for (const p of posLeft) {
-            this.ctx.beginPath();
-            this.ctx.arc(p.x, p.y, rLeft, 0, Math.PI * 2);
-            this.ctx.fill();
+            this.drawItem(p.x, p.y, rLeft, skin, dotColor);
         }
         for (const p of posRight) {
-            this.ctx.beginPath();
-            this.ctx.arc(p.x + this.logicalWidth / 2, p.y, rRight, 0, Math.PI * 2);
-            this.ctx.fill();
+            this.drawItem(p.x + this.logicalWidth / 2, p.y, rRight, skin, dotColor);
         }
     }
 
-    drawFormulaAnimation(positionsA, positionsB, skin, progress) {
+    drawFormulaAnimation(positionsA, positionsB, skin, dotColor, progress) {
         this.clear();
-        this.ctx.fillStyle = this.getColor(skin);
-        
         const offset = (1 - progress) * (this.logicalWidth / 4);
         const r = this.getDotRadius(positionsA.length + positionsB.length);
         
         for (const p of positionsA) {
-            this.ctx.beginPath();
-            this.ctx.arc(p.x - offset, p.y, r, 0, Math.PI * 2);
-            this.ctx.fill();
+            this.drawItem(p.x - offset, p.y, r, skin, dotColor);
         }
         for (const p of positionsB) {
-            this.ctx.beginPath();
-            this.ctx.arc(p.x + offset, p.y, r, 0, Math.PI * 2);
-            this.ctx.fill();
+            this.drawItem(p.x + offset, p.y, r, skin, dotColor);
         }
     }
 }

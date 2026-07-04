@@ -10,7 +10,13 @@ export class StateManager {
             if (data) return JSON.parse(data);
         } catch (e) {}
         return {
-            settings: { language: "bilingual", speed: 600, skin: "dynamic" },
+            settings: { 
+                language: "bilingual", 
+                speed: 600, 
+                skin: "circle",
+                dotColor: "#ff6b6b",
+                bgColor: "#f0f8ff"
+            },
             progress: { current_day: 1, history: [] }
         };
     }
