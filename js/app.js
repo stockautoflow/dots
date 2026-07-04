@@ -22,16 +22,13 @@ function showScreen(name) {
     screens[name].classList.add('active');
 }
 
-// UI Init
 document.getElementById('current-day-text').innerText = stateMgr.state.progress.current_day;
 document.getElementById('setting-lang').value = stateMgr.state.settings.language;
 document.getElementById('setting-speed').value = stateMgr.state.settings.speed;
 
-// Settings Events
 document.getElementById('setting-lang').addEventListener('change', (e) => stateMgr.updateSetting('language', e.target.value));
 document.getElementById('setting-speed').addEventListener('change', (e) => stateMgr.updateSetting('speed', parseInt(e.target.value)));
 
-// Backup Events
 document.getElementById('btn-export').addEventListener('click', () => {
     const code = stateMgr.exportBackupCode();
     if (code) navigator.clipboard.writeText(code).then(() => alert('バックアップコードをコピーしました。'));
@@ -46,7 +43,6 @@ document.getElementById('btn-import').addEventListener('click', () => {
     }
 });
 
-// Start Lesson
 document.getElementById('btn-start-lesson').addEventListener('click', async () => {
     await startLesson();
 });
@@ -56,7 +52,6 @@ document.getElementById('btn-return-home').addEventListener('click', () => {
     location.reload();
 });
 
-// Child Lock (Hold 2s)
 let pressTimer;
 const btnPause = document.getElementById('btn-pause');
 const startHold = (e) => { e.preventDefault(); pressTimer = setTimeout(showChildLock, 2000); };
@@ -66,7 +61,6 @@ btnPause.addEventListener('touchend', endHold);
 btnPause.addEventListener('mousedown', startHold);
 btnPause.addEventListener('mouseup', endHold);
 
-// History API (Prevent Back)
 window.addEventListener('popstate', () => {
     if (lessonActive) {
         history.pushState(null, null, location.href);
@@ -77,7 +71,7 @@ window.addEventListener('popstate', () => {
 async function requestWakeLock() {
     try {
         if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
-    } catch (err) { console.warn('Wake Lock error:', err); }
+    } catch (err) {}
 }
 
 function releaseWakeLock() {
@@ -90,16 +84,11 @@ async function startLesson() {
     await requestWakeLock();
     await audio.init();
     
-    if (!render) render = new RenderEngine('main-canvas');
-
     const day = stateMgr.state.progress.current_day;
     const numbers = getDailyNumbers(day);
     const lang = stateMgr.state.settings.language;
     
     showScreen('countdown');
-    document.getElementById('countdown-text').innerText = 'Loading...';
-    
-    await audio.preloadForDay(numbers, lang);
     
     for (let i = 3; i > 0; i--) {
         if (!lessonActive) return;
@@ -108,17 +97,31 @@ async function startLesson() {
     }
     
     showScreen('lesson');
+    
+    // ★修正: 画面表示直後にCanvasの初期化を確実に実行
+    // setTimeoutでブラウザのレンダリングキューに処理を遅延させ、確実にレイアウトが確定してから初期化
+    await new Promise(resolve => setTimeout(() => {
+        if (!render) {
+            render = new RenderEngine('main-canvas');
+        } else {
+            render.initCanvas();
+        }
+        resolve();
+    }, 0));
+
+
     runLessonLoop(numbers, day, lang);
 }
 
 async function runLessonLoop(numbers, day, lang) {
     let speed = stateMgr.state.settings.speed;
-    if (lang === 'bilingual') speed = Math.max(speed, 900); // バイリンガル速度調整
+    if (lang === 'bilingual') speed = Math.max(speed, 900);
 
     const textOverlay = document.getElementById('lesson-text-overlay');
 
     for (const num of numbers) {
         if (!lessonActive) return;
+        
         render.drawDots(num, stateMgr.state.settings.skin);
         textOverlay.innerText = '';
         
@@ -126,13 +129,22 @@ async function runLessonLoop(numbers, day, lang) {
             setTimeout(() => { if (lessonActive) textOverlay.innerText = num; }, 300);
         }
 
+        const startTime = Date.now();
+
         if (lang === 'ja' || lang === 'bilingual') await audio.playNumber(num, 'ja');
         if (lang === 'en' || lang === 'bilingual') {
             if (lang === 'bilingual') await sleep(100);
             await audio.playNumber(num, 'en');
         }
         
-        await sleep(speed);
+        const elapsed = Date.now() - startTime;
+        const remaining = speed - elapsed;
+        
+        if (remaining > 0) {
+            await sleep(remaining);
+        } else {
+            await sleep(10);
+        }
     }
 
     if (day <= 30) endLesson();
@@ -175,7 +187,8 @@ function waitForQuizAnswer(correctSide) {
                 canvas.removeEventListener('mousedown', handler);
                 resolve();
             } else {
-                canvas.style.transform = 'translateX(5px)';
+                canvas.style.transform = 'translateX(10px)';
+                setTimeout(() => canvas.style.transform = 'translateX(-10px)', 50);
                 setTimeout(() => canvas.style.transform = 'none', 100);
             }
         };
@@ -196,9 +209,9 @@ async function runFormulaPhase(numbers, lang) {
         const posA = finalPositions.slice(0, formula.numA);
         const posB = finalPositions.slice(formula.numA);
         
-        for (let p = 0; p <= 1; p += 0.1) {
+        for (let i = 0; i <= 10; i++) {
             if (!lessonActive) return;
-            render.drawFormulaAnimation(posA, posB, stateMgr.state.settings.skin, p);
+            render.drawFormulaAnimation(posA, posB, stateMgr.state.settings.skin, i / 10);
             await sleep(50);
         }
         
@@ -241,9 +254,8 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// PWA Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed: ', err));
     });
-}\n
+}

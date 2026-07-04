@@ -6,14 +6,32 @@ export class RenderEngine {
     }
 
     initCanvas() {
-        // Retina対応
         const dpr = window.devicePixelRatio || 1;
-        const rect = this.canvas.getBoundingClientRect();
-        this.canvas.width = rect.width * dpr;
-        this.canvas.height = rect.height * dpr;
+        
+        // ★修正: CSSに依存せずJSから強制的にスタイルを叩き込む
+        this.canvas.style.display = 'block';
+        this.canvas.style.width = '800px';
+        this.canvas.style.height = '600px';
+        this.canvas.style.maxWidth = '95vw';
+        this.canvas.style.maxHeight = '75vh';
+        this.canvas.style.flexShrink = '0'; 
+        this.canvas.style.margin = 'auto'; // 中央配置
+        
+        // ★視認性アップ: 鮮やかなシアンの背景と、太い黒枠をつける
+        this.canvas.style.backgroundColor = '#00FFFF'; // シアン
+        this.canvas.style.border = '4px solid #333';
+        this.canvas.style.borderRadius = '10px';
+        this.canvas.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)';
+
+        const logicalWidth = 800;
+        const logicalHeight = 600;
+
+        this.canvas.width = logicalWidth * dpr;
+        this.canvas.height = logicalHeight * dpr;
         this.ctx.scale(dpr, dpr);
-        this.logicalWidth = rect.width;
-        this.logicalHeight = rect.height;
+        
+        this.logicalWidth = logicalWidth;
+        this.logicalHeight = logicalHeight;
     }
 
     clear() {
@@ -28,10 +46,13 @@ export class RenderEngine {
 
     getColor(skin) {
         if (skin === 'blue_circle') return '#3182ce';
-        return '#ff6b6b'; // default red
+        return '#ff6b6b';
     }
 
     drawDots(value, skin, customPositions = null) {
+        // フェールセーフ: サイズが未設定なら再初期化
+        if (!this.logicalWidth) this.initCanvas();
+        
         this.clear();
         const r = this.getDotRadius(value);
         const color = this.getColor(skin);
@@ -54,8 +75,11 @@ export class RenderEngine {
         for (let i = 0; i < count; i++) {
             let placed = false;
             for (let attempts = 0; attempts < 100; attempts++) {
-                const x = radius + margin + Math.random() * (width - (radius + margin) * 2);
-                const y = radius + margin + Math.random() * (height - (radius + margin) * 2);
+                const safeWidth = Math.max(0, width - (radius + margin) * 2);
+                const safeHeight = Math.max(0, height - (radius + margin) * 2);
+                
+                const x = radius + margin + Math.random() * safeWidth;
+                const y = radius + margin + Math.random() * safeHeight;
                 
                 let overlap = false;
                 for (const p of positions) {
@@ -73,7 +97,6 @@ export class RenderEngine {
             }
             
             if (!placed) {
-                // ジッタードグリッドへのフォールバック
                 return this.generateJitteredGrid(count, radius, width, height);
             }
         }
@@ -93,8 +116,8 @@ export class RenderEngine {
                 if (added >= count) break;
                 const cx = c * cellW + cellW / 2;
                 const cy = r * cellH + cellH / 2;
-                const jitterX = (Math.random() - 0.5) * (cellW - radius * 2);
-                const jitterY = (Math.random() - 0.5) * (cellH - radius * 2);
+                const jitterX = (Math.random() - 0.5) * Math.max(0, cellW - radius * 2);
+                const jitterY = (Math.random() - 0.5) * Math.max(0, cellH - radius * 2);
                 positions.push({x: cx + jitterX, y: cy + jitterY});
                 added++;
             }
@@ -136,7 +159,6 @@ export class RenderEngine {
         this.clear();
         this.ctx.fillStyle = this.getColor(skin);
         
-        // progress: 0.0 (離れている) -> 1.0 (本来の位置)
         const offset = (1 - progress) * (this.logicalWidth / 4);
         const r = this.getDotRadius(positionsA.length + positionsB.length);
         
@@ -151,4 +173,4 @@ export class RenderEngine {
             this.ctx.fill();
         }
     }
-}\n
+}

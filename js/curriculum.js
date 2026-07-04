@@ -30,4 +30,4 @@ export function generateFormula(value) {
     const numA = Math.floor(Math.random() * (value - 1)) + 1;
     const numB = value - numA;
     return { numA, numB };
-}\n
+}

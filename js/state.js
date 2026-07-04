@@ -8,9 +8,7 @@ export class StateManager {
         try {
             const data = localStorage.getItem(this.storageKey);
             if (data) return JSON.parse(data);
-        } catch (e) {
-            console.error("LocalStorage parse error, resetting state.", e);
-        }
+        } catch (e) {}
         return {
             settings: { language: "bilingual", speed: 600, skin: "dynamic" },
             progress: { current_day: 1, history: [] }
@@ -38,12 +36,8 @@ export class StateManager {
     }
 
     exportBackupCode() {
-        try {
-            return btoa(encodeURIComponent(JSON.stringify(this.state)));
-        } catch (e) {
-            console.error("Backup export failed", e);
-            return null;
-        }
+        try { return btoa(encodeURIComponent(JSON.stringify(this.state))); } 
+        catch (e) { return null; }
     }
 
     importBackupCode(base64Str) {
@@ -54,9 +48,7 @@ export class StateManager {
                 this.save();
                 return true;
             }
-        } catch (e) {
-            console.error("Invalid backup code", e);
-        }
+        } catch (e) {}
         return false;
     }
-}\n
+}
