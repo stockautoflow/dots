@@ -8,19 +8,22 @@ export class RenderEngine {
         const dpr = window.devicePixelRatio || 1;
         
         this.canvas.style.display = 'block';
-        this.canvas.style.width = '800px';
-        this.canvas.style.height = '600px';
-        this.canvas.style.maxWidth = '95vw';
-        this.canvas.style.maxHeight = '75vh';
+        
+        // ★修正: アスペクト比を4:3に完全固定し、画面幅に合わせて縮小させる
+        this.canvas.style.width = '100%';
+        this.canvas.style.maxWidth = '800px';
+        this.canvas.style.aspectRatio = '4 / 3';
+        this.canvas.style.height = 'auto';
+        
         this.canvas.style.flexShrink = '0'; 
         this.canvas.style.margin = 'auto'; 
         
-        // ★背景色を動的に適用
         this.canvas.style.backgroundColor = bgColor; 
         this.canvas.style.border = '4px solid #333';
         this.canvas.style.borderRadius = '10px';
         this.canvas.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)';
 
+        // 内部解像度は800x600で固定（CSS側で縮小されても歪まない）
         const logicalWidth = 800;
         const logicalHeight = 600;
 
@@ -42,7 +45,6 @@ export class RenderEngine {
         return 10;
     }
 
-    // ★共通の描画関数（丸 or 絵文字）
     drawItem(x, y, r, skin, dotColor) {
         if (skin === 'circle' || skin === 'dynamic') {
             this.ctx.fillStyle = dotColor;
@@ -50,7 +52,6 @@ export class RenderEngine {
             this.ctx.arc(x, y, r, 0, Math.PI * 2);
             this.ctx.fill();
         } else {
-            // 絵文字を描画
             this.ctx.font = `${r * 2.5}px Arial`;
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
