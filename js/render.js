@@ -8,13 +8,10 @@ export class RenderEngine {
         const dpr = window.devicePixelRatio || 1;
         
         this.canvas.style.display = 'block';
-        
-        // ★修正: アスペクト比を4:3に完全固定し、画面幅に合わせて縮小させる
         this.canvas.style.width = '100%';
         this.canvas.style.maxWidth = '800px';
         this.canvas.style.aspectRatio = '4 / 3';
         this.canvas.style.height = 'auto';
-        
         this.canvas.style.flexShrink = '0'; 
         this.canvas.style.margin = 'auto'; 
         
@@ -23,7 +20,6 @@ export class RenderEngine {
         this.canvas.style.borderRadius = '10px';
         this.canvas.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)';
 
-        // 内部解像度は800x600で固定（CSS側で縮小されても歪まない）
         const logicalWidth = 800;
         const logicalHeight = 600;
 

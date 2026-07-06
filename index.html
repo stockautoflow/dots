@@ -8,11 +8,11 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- 縦画面ロックを撤廃しました -->
-
     <div id="home-screen" class="screen active">
-        <h1>V8 スマートドッツ / Smart Dots</h1>
+        <h1>V9 スマートドッツ / Smart Dots</h1>
         <button id="btn-start-lesson" class="primary-btn">レッスンをはじめる</button>
+        <!-- ★追加: 掛け流しモードボタン -->
+        <button id="btn-start-endless" class="secondary-btn">🔁 掛け流しモード (Endless)</button>
         
         <div class="settings-panel">
             <h2>設定 / Settings</h2>
@@ -40,6 +40,10 @@
                         <option value="🐧">🐧 ペンギン</option>
                         <option value="🚗">🚗 くるま</option>
                         <option value="🐶">🐶 いぬ</option>
+                        <!-- ★追加: 新しいアイコン -->
+                        <option value="🍓">🍓 いちご</option>
+                        <option value="⚽">⚽ サッカーボール</option>
+                        <option value="🚃">🚃 電車</option>
                     </select>
                 </label>
                 <label>ドッツ色: <input type="color" id="setting-dot-color"></label>

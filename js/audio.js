@@ -4,7 +4,6 @@ export class AudioEngine {
         this.unlocked = false;
     }
 
-    // ★修正: iOS/TV対策として、非同期(async)ではなく同期関数に変更
     init() {
         if (!this.unlocked && this.synth) {
             try {

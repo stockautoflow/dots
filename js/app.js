@@ -55,10 +55,16 @@ document.getElementById('btn-import').addEventListener('click', () => {
     }
 });
 
-// ★修正: iOS/TV対策。クリックイベント内で即座に同期的にaudio.init()を呼ぶ
+// 通常レッスン開始
 document.getElementById('btn-start-lesson').addEventListener('click', async (e) => {
     audio.init(); 
     await startLesson();
+});
+
+// ★追加: 掛け流しモード開始
+document.getElementById('btn-start-endless').addEventListener('click', async (e) => {
+    audio.init(); 
+    await startEndlessMode();
 });
 
 document.getElementById('btn-return-home').addEventListener('click', () => {
@@ -92,6 +98,7 @@ function releaseWakeLock() {
     if (wakeLock !== null) { wakeLock.release(); wakeLock = null; }
 }
 
+// --- 通常レッスン処理 ---
 async function startLesson() {
     lessonActive = true;
     history.pushState(null, null, location.href);
@@ -102,7 +109,6 @@ async function startLesson() {
     const lang = stateMgr.state.settings.language;
     
     showScreen('countdown');
-    
     for (let i = 3; i > 0; i--) {
         if (!lessonActive) return;
         document.getElementById('countdown-text').innerText = i;
@@ -110,11 +116,8 @@ async function startLesson() {
     }
     
     showScreen('lesson');
-    
     await new Promise(resolve => setTimeout(() => {
-        if (!render) {
-            render = new RenderEngine('main-canvas');
-        }
+        if (!render) render = new RenderEngine('main-canvas');
         render.initCanvas(stateMgr.state.settings.bgColor);
         resolve();
     }, 0));
@@ -151,11 +154,8 @@ async function runLessonLoop(numbers, day, lang) {
         const elapsed = Date.now() - startTime;
         const remaining = speed - elapsed;
         
-        if (remaining > 0) {
-            await sleep(remaining);
-        } else {
-            await sleep(10);
-        }
+        if (remaining > 0) await sleep(remaining);
+        else await sleep(10);
     }
 
     if (day <= 30) endLesson();
@@ -163,6 +163,78 @@ async function runLessonLoop(numbers, day, lang) {
     else runFormulaPhase(numbers, lang);
 }
 
+// --- ★追加: 掛け流しモード処理 ---
+async function startEndlessMode() {
+    lessonActive = true;
+    history.pushState(null, null, location.href);
+    await requestWakeLock();
+    
+    const lang = stateMgr.state.settings.language;
+    
+    showScreen('countdown');
+    for (let i = 3; i > 0; i--) {
+        if (!lessonActive) return;
+        document.getElementById('countdown-text').innerText = i;
+        await sleep(1000);
+    }
+    
+    showScreen('lesson');
+    await new Promise(resolve => setTimeout(() => {
+        if (!render) render = new RenderEngine('main-canvas');
+        render.initCanvas(stateMgr.state.settings.bgColor);
+        resolve();
+    }, 0));
+
+    runEndlessLoop(lang);
+}
+
+async function runEndlessLoop(lang) {
+    let speed = stateMgr.state.settings.speed;
+    if (lang === 'bilingual') speed = Math.max(speed, 900);
+
+    const textOverlay = document.getElementById('lesson-text-overlay');
+    
+    // 掛け流し用のランダムスキンとカラー
+    const skins = ['circle', '🍎', '⭐', '🐧', '🚗', '🐶', '🍓', '⚽', '🚃'];
+    const colors = ['#ff6b6b', '#3182ce', '#38a169', '#d69e2e', '#805ad5', '#e53e3e', '#dd6b20', '#319795'];
+    
+    let currentSkin = stateMgr.state.settings.skin;
+    let currentColor = stateMgr.state.settings.dotColor;
+    
+    let num = 1;
+    let count = 0;
+
+    while (lessonActive) {
+        // 10枚ごとにスキンと色をランダムに変更
+        if (count > 0 && count % 10 === 0) {
+            currentSkin = skins[Math.floor(Math.random() * skins.length)];
+            currentColor = colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        render.drawDots(num, currentSkin, currentColor);
+        textOverlay.innerText = ''; // 掛け流しでは数字テキストは出さない
+
+        const startTime = Date.now();
+
+        if (lang === 'ja' || lang === 'bilingual') await audio.playNumber(num, 'ja');
+        if (lang === 'en' || lang === 'bilingual') {
+            if (lang === 'bilingual') await sleep(100);
+            await audio.playNumber(num, 'en');
+        }
+        
+        const elapsed = Date.now() - startTime;
+        const remaining = speed - elapsed;
+        
+        if (remaining > 0) await sleep(remaining);
+        else await sleep(10);
+
+        num++;
+        if (num > 50) num = 1; // 50までいったら1に戻る
+        count++;
+    }
+}
+
+// --- クイズ・数式・終了処理 ---
 async function runQuizPhase(numbers, day) {
     const textOverlay = document.getElementById('lesson-text-overlay');
     const skin = stateMgr.state.settings.skin;
