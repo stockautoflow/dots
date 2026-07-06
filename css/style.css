@@ -40,7 +40,6 @@ body, html {
     cursor: pointer;
 }
 
-/* ★追加: 掛け流しボタンのスタイル */
 .secondary-btn {
     font-size: 1.2rem;
     padding: 0.8rem 1.5rem;
@@ -131,9 +130,10 @@ body, html {
 }
 
 #countdown-text {
-    font-size: 8rem;
+    font-size: 5rem;
     font-weight: bold;
     color: #ff6b6b;
+    text-align: center;
 }
 
 #numpad {

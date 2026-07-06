@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smartdots-v9';
+const CACHE_NAME = 'smartdots-v10';
 const urlsToCache = [
     './',
     './index.html',

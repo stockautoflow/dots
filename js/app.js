@@ -57,13 +57,13 @@ document.getElementById('btn-import').addEventListener('click', () => {
 
 // 通常レッスン開始
 document.getElementById('btn-start-lesson').addEventListener('click', async (e) => {
-    audio.init(); 
+    await audio.init(); 
     await startLesson();
 });
 
-// ★追加: 掛け流しモード開始
+// 掛け流しモード開始
 document.getElementById('btn-start-endless').addEventListener('click', async (e) => {
-    audio.init(); 
+    await audio.init(); 
     await startEndlessMode();
 });
 
@@ -109,6 +109,11 @@ async function startLesson() {
     const lang = stateMgr.state.settings.language;
     
     showScreen('countdown');
+    document.getElementById('countdown-text').innerText = 'Loading Audio...';
+    
+    // ★追加: MP3ファイルのプリロード
+    await audio.preloadForDay(numbers, lang);
+    
     for (let i = 3; i > 0; i--) {
         if (!lessonActive) return;
         document.getElementById('countdown-text').innerText = i;
@@ -163,7 +168,7 @@ async function runLessonLoop(numbers, day, lang) {
     else runFormulaPhase(numbers, lang);
 }
 
-// --- ★追加: 掛け流しモード処理 ---
+// --- 掛け流しモード処理 ---
 async function startEndlessMode() {
     lessonActive = true;
     history.pushState(null, null, location.href);
@@ -172,6 +177,12 @@ async function startEndlessMode() {
     const lang = stateMgr.state.settings.language;
     
     showScreen('countdown');
+    document.getElementById('countdown-text').innerText = 'Loading Audio...';
+    
+    // ★追加: 掛け流しは1〜50すべて使うので全プリロード
+    const allNumbers = Array.from({length: 50}, (_, i) => i + 1);
+    await audio.preloadForDay(allNumbers, lang);
+
     for (let i = 3; i > 0; i--) {
         if (!lessonActive) return;
         document.getElementById('countdown-text').innerText = i;
@@ -193,8 +204,6 @@ async function runEndlessLoop(lang) {
     if (lang === 'bilingual') speed = Math.max(speed, 900);
 
     const textOverlay = document.getElementById('lesson-text-overlay');
-    
-    // 掛け流し用のランダムスキンとカラー
     const skins = ['circle', '🍎', '⭐', '🐧', '🚗', '🐶', '🍓', '⚽', '🚃'];
     const colors = ['#ff6b6b', '#3182ce', '#38a169', '#d69e2e', '#805ad5', '#e53e3e', '#dd6b20', '#319795'];
     
@@ -205,14 +214,13 @@ async function runEndlessLoop(lang) {
     let count = 0;
 
     while (lessonActive) {
-        // 10枚ごとにスキンと色をランダムに変更
         if (count > 0 && count % 10 === 0) {
             currentSkin = skins[Math.floor(Math.random() * skins.length)];
             currentColor = colors[Math.floor(Math.random() * colors.length)];
         }
 
         render.drawDots(num, currentSkin, currentColor);
-        textOverlay.innerText = ''; // 掛け流しでは数字テキストは出さない
+        textOverlay.innerText = ''; 
 
         const startTime = Date.now();
 
@@ -229,7 +237,7 @@ async function runEndlessLoop(lang) {
         else await sleep(10);
 
         num++;
-        if (num > 50) num = 1; // 50までいったら1に戻る
+        if (num > 50) num = 1; 
         count++;
     }
 }
