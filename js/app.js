@@ -55,7 +55,9 @@ document.getElementById('btn-import').addEventListener('click', () => {
     }
 });
 
-document.getElementById('btn-start-lesson').addEventListener('click', async () => {
+// ★修正: iOS/TV対策。クリックイベント内で即座に同期的にaudio.init()を呼ぶ
+document.getElementById('btn-start-lesson').addEventListener('click', async (e) => {
+    audio.init(); 
     await startLesson();
 });
 
@@ -94,7 +96,6 @@ async function startLesson() {
     lessonActive = true;
     history.pushState(null, null, location.href);
     await requestWakeLock();
-    await audio.init();
     
     const day = stateMgr.state.progress.current_day;
     const numbers = getDailyNumbers(day);
@@ -114,7 +115,6 @@ async function startLesson() {
         if (!render) {
             render = new RenderEngine('main-canvas');
         }
-        // ★背景色を適用して初期化
         render.initCanvas(stateMgr.state.settings.bgColor);
         resolve();
     }, 0));
@@ -133,7 +133,6 @@ async function runLessonLoop(numbers, day, lang) {
     for (const num of numbers) {
         if (!lessonActive) return;
         
-        // ★スキンと色を渡して描画
         render.drawDots(num, skin, dotColor);
         textOverlay.innerText = '';
         

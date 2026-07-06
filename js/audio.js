@@ -4,23 +4,26 @@ export class AudioEngine {
         this.unlocked = false;
     }
 
-    async init() {
-        if (!this.unlocked) {
+    // ★修正: iOS/TV対策として、非同期(async)ではなく同期関数に変更
+    init() {
+        if (!this.unlocked && this.synth) {
             try {
                 const utterance = new SpeechSynthesisUtterance('');
                 utterance.volume = 0;
                 this.synth.speak(utterance);
                 this.unlocked = true;
-            } catch (e) {}
+            } catch (e) {
+                console.warn("Speech API init failed", e);
+            }
         }
-    }
-
-    async preloadForDay(numbers, lang) {
-        return Promise.resolve();
     }
 
     playNumber(num, lang) {
         return new Promise((resolve) => {
+            if (!this.synth) {
+                resolve();
+                return;
+            }
             try {
                 const utterance = new SpeechSynthesisUtterance(num.toString());
                 utterance.volume = 1;
@@ -52,6 +55,6 @@ export class AudioEngine {
     }
     
     suspend() {
-        try { this.synth.cancel(); } catch (e) {}
+        try { if (this.synth) this.synth.cancel(); } catch (e) {}
     }
 }
